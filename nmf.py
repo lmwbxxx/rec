@@ -78,20 +78,24 @@ def mf(R, K=20, steps=25, alpha=0.01, beta=0.1):
 
 
 
-def bpr(order,M,N, K=20, steps=10, alpha=0.01, beta=0.05,mu=1):
+def bpr(order,M,N, K=20, steps=10, alpha=0.01, beta=0.03):
     logging.info("Parameters for BPR: K=%d, steps=%d, alpha=%f, beta=%f", K, steps, alpha, beta)
     logging.info("Matrix of %d * %d",M,N)
 
-    P = mu*numpy.random.rand(M, K)
-    Q = mu*numpy.random.rand(N, K)
+    # P = numpy.random.rand(M, K)
+    # Q = numpy.random.rand(N, K)
+    P=numpy.random.normal(0,1,size=(M,K))
+    Q=numpy.random.normal(0,1,size=(N,K))
+
+
     Q = Q.T
     for step in xrange(steps):
         for (u,i,j) in order:
             uihat=numpy.dot(P[u, :], Q[:, i])
             ujhat = numpy.dot(P[u, :], Q[:, j])
-            P[u,:]=P[u,:]-alpha*(sigmoid(ujhat-uihat)*(Q[:,j]-Q[:,i])-beta*P[u,:])
+            P[u,:]=P[u,:]-alpha*(sigmoid(ujhat-uihat)*(Q[:,j]-Q[:,i])+beta*P[u,:])
             Q[:,i]=Q[:,i]-alpha*(-P[u,:]*sigmoid(ujhat-uihat)+beta*Q[:,i])
-            Q[:,j]=Q[:,j]-alpha*(P[u,:]*sigmoid(ujhat-uihat)-beta*Q[:,j])
+            Q[:,j]=Q[:,j]-alpha*(P[u,:]*sigmoid(ujhat-uihat)+beta*Q[:,j])
 
         orderloss=0
         for (u,i,j) in order:
@@ -128,14 +132,14 @@ def cbpr(order,M,N, cap, userp, K=20, steps=10, alpha=0.01, beta=0.05,theta=0.2)
                 # Q[:,j]=Q[:,j]-alpha*(P[u,:]*sigmoid(ujhat-uihat)+beta*Q[:,j])
 
                 P[u, :] = P[u,:] - alpha * (
-                    (1 - theta) * sigmoid(ujhat-uihat)*(Q[:,j]-Q[:,i]) - beta * P[u,:] +
+                    (1 - theta) * sigmoid(ujhat-uihat)*(Q[:,j]-Q[:,i]) + beta * P[u,:] +
                     theta * sigmoid(ej - cap[j]) * userp[i] * Q[:,j] *
                     sigmoid(ujhat) * sigmoid(-ujhat)
                 )
                 Q[:,i]=Q[:,i]-alpha*(-P[u,:]*sigmoid(ujhat-uihat)+beta*Q[:,i])
 
                 Q[:, j] = Q[:,j] - alpha * (
-                        (1 - theta) * P[u,:]*sigmoid(ujhat-uihat) - beta * Q[:,j] +
+                        (1 - theta) * P[u,:]*sigmoid(ujhat-uihat) + beta * Q[:,j] +
                         theta * sigmoid(ej - cap[j]) * userp[i] * P[u,:] *
                         sigmoid(ujhat) * sigmoid(-ujhat)
                 )
